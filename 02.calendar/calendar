@@ -26,16 +26,8 @@ end
 # オプションが-yのみだと使い方を表示して終了
 print_usage(opts) if params.has_key?(:y) && !(params.has_key?(:m))
 
-if params[:y].nil?
-  year = Date.today.year
-else
-  year = params[:y]
-end
-if params[:m].nil?
-  month = Date.today.month
-else
-  month = params[:m]
-end
+year = params[:y] || Date.today.year
+month = params[:m] || Date.today.month
 
 first_date = Date.new(year, month, 1)
 last_date = Date.new(year, month, -1)
@@ -45,20 +37,7 @@ puts "#{month}月 #{year}".center(LineWidth)
 puts "日 月 火 水 木 金 土"
 
 # 初日の表示位置を曜日によって右にシフトする 
-case first_date.strftime('%a')
-when "Mon"
-  print " " * 3
-when "Tue"
-  print " " * 6
-when "Wed"
-  print " " * 9
-when "Thu"
-  print " " * 12
-when "Fri"
-  print " " * 15
-when "Sat"
-  print " " * 18
-end
+print "   " * first_date.wday
 
 # 日付の表示
 (first_date..last_date).each do |date|
