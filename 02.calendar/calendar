@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+require "date"
+require "optparse"
+
+def print_usage(opts)
+  puts opts.help
+  puts
+  puts "オプションを指定しない場合は今月が表示されます."
+  puts "[-y]オプションのみの指定はできません."
+  puts "[-m]オプションのみ指定した場合は今年の月が表示されます."
+  exit(false)
+end
+
+# オプションの指定で例外が発生した時は使い方を表示して終了
+params = {}
+opts = OptionParser.new do |opts|
+  opts.banner = "使用法: calendar [オプション]...\nカレンダーを標準出力に表示します."
+  opts.on("-y YEAR", Integer, "表示する年を1970年〜2100年の範囲で指定します.") {|y| (1970..2100).cover?(y) ? y : print_usage(opts) }
+  opts.on("-m MONTH", Integer, "表示する月を1月〜12月の範囲で指定します.") {|m| (1..12).cover?(m) ? m : print_usage(opts) }
+  opts.on("-h", "--help", "このヘルプを表示します.") {print_usage(opts) }
+  opts.parse!(ARGV, into: params)
+rescue OptionParser::ParseError
+  print_usage(opts)
+end
+
+# オプションが-yのみだと使い方を表示して終了
+print_usage(opts) if params.has_key?(:y) && !(params.has_key?(:m))
+
+year = params[:y] || Date.today.year
+month = params[:m] || Date.today.month
+
+first_date = Date.new(year, month, 1)
+last_date = Date.new(year, month, -1)
+
+LineWidth = 20
+puts "#{month}月 #{year}".center(LineWidth)
+puts "日 月 火 水 木 金 土"
+
+# 初日の表示位置を曜日によって右にシフトする 
+print "   " * first_date.wday
+
+# 日付の表示
+(first_date..last_date).each do |date|
+  print date.day.to_s.rjust(2)
+  if date.saturday?
+    puts
+  else
+    print " "
+  end
+end
