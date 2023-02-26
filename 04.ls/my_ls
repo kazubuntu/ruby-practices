@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+def main
+  directories = if ARGV.empty?
+                  ['.']
+                else
+                  print_files
+                  ARGV.select { |argv| File.directory?(argv) }.sort
+                end
+  directories.each_with_index do |directory, index|
+    puts "#{directory}:" if directories.size > 1
+    directory_entries = read_directory(directory)
+    print_list(directory_entries)
+    puts if index < directories.size - 1
+  end
+end
+
+def print_files
+  files = ARGV.select { |argv| File.file?(argv) }.sort
+  return if files.empty?
+
+  print_list(files)
+  puts unless files.size == ARGV.size
+end
+
+def read_directory(directory)
+  Dir.glob('*', base: directory).sort
+end
+
+def print_list(entries)
+  return if entries.empty?
+
+  max_colmun = 3.0
+  slice_size = (entries.size / max_colmun).ceil
+  sliced_entries = entries.each_slice(slice_size).map do |entry|
+    max_width = calc_width(entry)
+    entry.map { |item| item.ljust(max_width + 2) }
+  end
+  zipped_entries = sliced_entries[0].zip(*sliced_entries[1..])
+  zipped_entries.each do |zipped_entry|
+    zipped_entry.each { |entry| print entry }
+    puts
+  end
+end
+
+def calc_width(entry)
+  entry.map do |entry_name|
+    entry_name.each_char.map { |char| char.bytesize == 1 ? 1 : 2 }.sum
+  end.max
+end
+
+main
