@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# 引数が無ければカレントディレクトリ、ある場合はファイルとディレクトリに分けて表示する
 def main
   directories = if ARGV.empty?
                   ['.']
@@ -16,6 +17,7 @@ def main
   end
 end
 
+# 引数からファイルのみを抽出して表示する
 def print_files
   files = ARGV.select { |argv| File.file?(argv) }.sort
   return if files.empty?
@@ -28,6 +30,7 @@ def read_directory(directory)
   Dir.glob('*', base: directory).sort
 end
 
+# 最大列数を指定し、行と列を入れ替えて表示する
 def print_list(entries)
   return if entries.empty?
 
@@ -44,6 +47,7 @@ def print_list(entries)
   end
 end
 
+# 列の最大表示幅を計算する。全角の表示幅は半角の2倍とする
 def calc_width(entry)
   entry.map do |entry_name|
     entry_name.each_char.map { |char| char.bytesize == 1 ? 1 : 2 }.sum
