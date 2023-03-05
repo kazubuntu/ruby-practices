@@ -1,29 +1,27 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# 引数が無ければカレントディレクトリ、ある場合はファイルとディレクトリに分けて表示する
 def main
-  directories = if ARGV.empty?
-                  ['.']
-                else
-                  print_files
-                  ARGV.select { |argv| File.directory?(argv) }.sort
-                end
-  directories.each_with_index do |directory, index|
-    puts "#{directory}:" if directories.size > 1
-    directory_entries = read_directory(directory)
-    print_list(directory_entries)
-    puts if index < directories.size - 1
-  end
+  files = ARGV.select { |arg| File.file?(arg) }.sort
+  directories = ARGV.empty? ? ['.'] : ARGV.select { |arg| File.directory?(arg) }.sort
+  files_size = files.size
+  directories_size = directories.size
+  print_files(files, directories_size) unless files.empty?
+  print_directories(directories, directories_size, files_size)
 end
 
-# 引数からファイルのみを抽出して表示する
-def print_files
-  files = ARGV.select { |argv| File.file?(argv) }.sort
-  return if files.empty?
-
+def print_files(files, directories_size)
   print_list(files)
-  puts unless files.size == ARGV.size
+  puts unless directories_size.zero?
+end
+
+def print_directories(directories, directories_size, files_size)
+  directories.each_with_index do |directory, index|
+    puts "#{directory}:" if directories_size > 1 || files_size.positive?
+    directory_entries = read_directory(directory)
+    print_list(directory_entries)
+    puts if index < directories_size - 1
+  end
 end
 
 def read_directory(directory)
