@@ -4,10 +4,14 @@
 require 'optparse'
 
 def main
-  params = ARGV.getopts('a')
+  params = ARGV.getopts('a', 'r')
 
   files = ARGV.select { |arg| File.file?(arg) }.sort
   directories = ARGV.empty? ? ['.'] : ARGV.select { |arg| File.directory?(arg) }.sort
+  if params['r']
+    files = files.reverse
+    directories = directories.reverse
+  end
   files_size = files.size
   directories_size = directories.size
   print_files(files, directories_size) unless files.empty?
@@ -30,7 +34,8 @@ end
 
 def read_directory(directory, params)
   flags = params['a'] ? File::FNM_DOTMATCH : 0
-  Dir.glob('*', flags, base: directory)
+  directory_entries = Dir.glob('*', flags, base: directory)
+  params['r'] ? directory_entries.reverse : directory_entries
 end
 
 # 最大列数を指定し、行と列を入れ替えて表示する
