@@ -2,11 +2,12 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'etc'
 
 def main
-  params = ARGV.getopts('a', 'r')
+  params = ARGV.getopts('arl')
 
-  files = ARGV.select { |arg| File.file?(arg) }.sort
+  files = ARGV.select { |arg| File.file?(arg) || File.symlink?(arg) }.sort
   directories = ARGV.empty? ? ['.'] : ARGV.select { |arg| File.directory?(arg) }.sort
   if params['r']
     files = files.reverse
@@ -14,12 +15,13 @@ def main
   end
   files_size = files.size
   directories_size = directories.size
-  print_files(files, directories_size) unless files.empty?
+  print_files(files, directories_size, params) unless files.empty?
   print_directories(directories, directories_size, files_size, params)
 end
 
-def print_files(files, directories_size)
-  print_list(files)
+def print_files(files, directories_size, params)
+  files = long_list(files) if params['l']
+  print_list(files, params)
   puts unless directories_size.zero?
 end
 
@@ -27,7 +29,8 @@ def print_directories(directories, directories_size, files_size, params)
   directories.each_with_index do |directory, index|
     puts "#{directory}:" if directories_size > 1 || files_size.positive?
     directory_entries = read_directory(directory, params)
-    print_list(directory_entries)
+    directory_entries = long_list(directory_entries, directory) if params['l']
+    print_list(directory_entries, params)
     puts if index < directories_size - 1
   end
 end
@@ -38,15 +41,48 @@ def read_directory(directory, params)
   params['r'] ? directory_entries.reverse : directory_entries
 end
 
+def long_list(entries, directory = nil)
+  if directory
+    pathes = entries.map { |entry| File.join(directory, entry) }
+    basenames = pathes.map { |path| File.lstat(path).symlink? ? "#{File.basename(path)} -> #{File.readlink(path)}" : File.basename(path) }
+  else
+    pathes = entries
+    basenames = pathes.map { |path| File.lstat(path).symlink? ? "#{path} -> #{File.readlink(path)}" : path }
+  end
+  stats = pathes.map { |path| File.lstat(path) }
+
+  puts "合計 #{stats.map(&:blocks).sum}" if directory
+
+  modes = stats.map { |stat| file_permission(stat) }
+  links = stats.map { |stat| stat.nlink.to_s }
+  max_width = links.map(&:length).max
+  rjust_links = links.map { |link| link.rjust(max_width) }
+  uids = stats.map { |stat| Etc.getpwuid(stat.uid).name }
+  gids = stats.map { |stat| Etc.getgrgid(stat.gid).name }
+  sizes = stats.map { |stat| stat.size.to_s }
+  max_width = sizes.map(&:length).max
+  rjust_sizes = sizes.map { |size| size.rjust(max_width) }
+  mtimes = stats.map { |stat| stat.mtime.strftime('%_m月 %e %R') }
+  [*modes, *rjust_links, *uids, *gids, *rjust_sizes, *mtimes, *basenames]
+end
+
+def file_permission(stat)
+  file_type = { 'file' => '-', 'directory' => 'd', 'link' => 'l' }[stat.ftype]
+  permmission = { '7' => 'rwx', '6' => 'rw-', '5' => 'r-x', '4' => 'r--', '3' => '-wx', '2' => '-w-', '1' => '--x', '0' => '---' }
+  file_mode = stat.mode.to_s(8).slice(-3, 3).chars.map { |mode_number| permmission[mode_number] }.join
+  file_type + file_mode
+end
+
 # 最大列数を指定し、行と列を入れ替えて表示する
-def print_list(entries)
+def print_list(entries, params = {})
   return if entries.empty?
 
-  max_colmun = 3.0
+  max_colmun = params['l'] ? 7.0 : 3.0
   slice_size = (entries.size / max_colmun).ceil
   sliced_entries = entries.each_slice(slice_size).map do |entry|
     max_width = calc_width(entry)
-    multi_byte_ljust(entry, max_width + 2)
+    add_padding = params['l'] ? 1 : 2
+    multi_byte_ljust(entry, max_width + add_padding)
   end
   zipped_entries = sliced_entries[0].zip(*sliced_entries[1..])
   zipped_entries.each do |zipped_entry|
