@@ -94,8 +94,7 @@ def print_long_list(stats, basenames)
   mtimes = get_mtimes(stats)
 
   stats.size.times do |n|
-    print "#{modes[n]} #{links[n]} #{uids[n]} #{gids[n]} #{sizes[n]} #{mtimes[n]} #{basenames[n]}"
-    puts if n < modes.size
+    puts "#{modes[n]} #{links[n]} #{uids[n]} #{gids[n]} #{sizes[n]} #{mtimes[n]} #{basenames[n]}"
   end
 end
 
@@ -111,9 +110,8 @@ def file_permission(stat)
 end
 
 def get_links(stats)
-  links = stats.map { |stat| stat.nlink.to_s }
-  max_width = links.map(&:length).max
-  links.map { |link| link.rjust(max_width) }
+  max_width = stats.map { |stat| stat.nlink.to_s.length }.max
+  stats.map { |stat| stat.nlink.to_s.rjust(max_width) }
 end
 
 def get_uids(stats)
@@ -125,9 +123,8 @@ def get_gids(stats)
 end
 
 def get_sizes(stats)
-  sizes = stats.map { |stat| stat.size.to_s }
-  max_width = sizes.map(&:length).max
-  sizes.map { |size| size.rjust(max_width) }
+  max_width = stats.map { |stat| stat.size.to_s.length }.max
+  stats.map { |stat| stat.size.to_s.rjust(max_width) }
 end
 
 def get_mtimes(stats)
