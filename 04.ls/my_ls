@@ -2,11 +2,12 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'etc'
 
 def main
-  params = ARGV.getopts('a', 'r')
+  params = ARGV.getopts('arl')
 
-  files = ARGV.select { |arg| File.file?(arg) }.sort
+  files = ARGV.select { |arg| File.file?(arg) || File.symlink?(arg) }.sort
   directories = ARGV.empty? ? ['.'] : ARGV.select { |arg| File.directory?(arg) }.sort
   if params['r']
     files = files.reverse
@@ -14,12 +15,12 @@ def main
   end
   files_size = files.size
   directories_size = directories.size
-  print_files(files, directories_size) unless files.empty?
+  print_files(files, directories_size, params) unless files.empty?
   print_directories(directories, directories_size, files_size, params)
 end
 
-def print_files(files, directories_size)
-  print_list(files)
+def print_files(files, directories_size, params)
+  params['l'] ? files_long_list(files) : print_list(files)
   puts unless directories_size.zero?
 end
 
@@ -27,7 +28,7 @@ def print_directories(directories, directories_size, files_size, params)
   directories.each_with_index do |directory, index|
     puts "#{directory}:" if directories_size > 1 || files_size.positive?
     directory_entries = read_directory(directory, params)
-    print_list(directory_entries)
+    params['l'] ? directories_long_list(directory_entries, directory) : print_list(directory_entries)
     puts if index < directories_size - 1
   end
 end
@@ -68,6 +69,66 @@ def multi_byte_ljust(entry, max_width)
     padding = max_width - width
     entry_name + ' ' * padding
   end
+end
+
+def files_long_list(files)
+  basenames = files.map { |file| File.lstat(file).symlink? ? "#{file} -> #{File.readlink(file)}" : file }
+  stats = files.map { |file| File.lstat(file) }
+  print_long_list(stats, basenames)
+end
+
+def directories_long_list(entries, directory)
+  pathes = entries.map { |entry| File.join(directory, entry) }
+  basenames = pathes.map { |path| File.lstat(path).symlink? ? "#{File.basename(path)} -> #{File.readlink(path)}" : File.basename(path) }
+  stats = pathes.map { |path| File.lstat(path) }
+  puts "合計 #{stats.map(&:blocks).sum}"
+  print_long_list(stats, basenames)
+end
+
+def print_long_list(stats, basenames)
+  modes = get_modes(stats)
+  links = get_links(stats)
+  uids = get_uids(stats)
+  gids = get_gids(stats)
+  sizes = get_sizes(stats)
+  mtimes = get_mtimes(stats)
+
+  stats.size.times do |n|
+    puts "#{modes[n]} #{links[n]} #{uids[n]} #{gids[n]} #{sizes[n]} #{mtimes[n]} #{basenames[n]}"
+  end
+end
+
+def get_modes(stats)
+  stats.map { |stat| file_permission(stat) }
+end
+
+def file_permission(stat)
+  file_type = { 'file' => '-', 'directory' => 'd', 'link' => 'l' }[stat.ftype]
+  permmission = { '7' => 'rwx', '6' => 'rw-', '5' => 'r-x', '4' => 'r--', '3' => '-wx', '2' => '-w-', '1' => '--x', '0' => '---' }
+  file_mode = stat.mode.to_s(8).slice(-3, 3).chars.map { |mode_number| permmission[mode_number] }.join
+  file_type + file_mode
+end
+
+def get_links(stats)
+  max_width = stats.map { |stat| stat.nlink.to_s.length }.max
+  stats.map { |stat| stat.nlink.to_s.rjust(max_width) }
+end
+
+def get_uids(stats)
+  stats.map { |stat| Etc.getpwuid(stat.uid).name }
+end
+
+def get_gids(stats)
+  stats.map { |stat| Etc.getgrgid(stat.gid).name }
+end
+
+def get_sizes(stats)
+  max_width = stats.map { |stat| stat.size.to_s.length }.max
+  stats.map { |stat| stat.size.to_s.rjust(max_width) }
+end
+
+def get_mtimes(stats)
+  stats.map { |stat| stat.mtime.strftime('%_m月 %e %R') }
 end
 
 main
