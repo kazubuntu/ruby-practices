@@ -8,6 +8,7 @@ def main
 
   text_of_stdin = read_text_from_stdin
   stat_of_text_of_stdin = count_lines_words_bytes_in_text_of_stdin(text_of_stdin)
+  print_stat_of_text_of_stdin(stat_of_text_of_stdin, options)
 end
 
 def parse_options
@@ -31,6 +32,24 @@ def count_lines_words_bytes_in_text_of_stdin(text)
     words: text.split.size,
     bytes: text.bytesize
   }
+end
+
+def print_stat_of_text_of_stdin(stat, options)
+  formated_stat = format_stat(stat, options)
+  puts formated_stat
+end
+
+def format_stat(stat, options)
+  filtered_stat = filter_stat(stat, options)
+  if options.size == 1
+    filtered_stat.join(' ')
+  else
+    filtered_stat.map { |item| item.to_s.rjust(7) }.join(' ')
+  end
+end
+
+def filter_stat(stat, options)
+  stat.filter_map { |key, value| value if options[key] || options.empty? }
 end
 
 main
