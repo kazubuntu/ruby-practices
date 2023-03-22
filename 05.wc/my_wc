@@ -1,9 +1,24 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'optparse'
+
 def main
+  options = parse_options
+
   text_of_stdin = read_text_from_stdin
   stat_of_text_of_stdin = count_lines_words_bytes_in_text_of_stdin(text_of_stdin)
+end
+
+def parse_options
+  options = {}
+  OptionParser.new do |opt|
+    opt.on('-l') { |v| options[:lines] = v }
+    opt.on('-w') { |v| options[:words] = v }
+    opt.on('-c') { |v| options[:bytes] = v }
+    opt.parse!(ARGV)
+  end
+  options
 end
 
 def read_text_from_stdin
