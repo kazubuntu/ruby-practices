@@ -2,6 +2,20 @@
 # frozen_string_literal: true
 
 def main
+  text_of_stdin = read_text_from_stdin
+  stat_of_text_of_stdin = count_lines_words_bytes_in_text_of_stdin(text_of_stdin)
+end
+
+def read_text_from_stdin
+  $stdin.read
+end
+
+def count_lines_words_bytes_in_text_of_stdin(text)
+  {
+    lines: text.lines.size,
+    words: text.split.size,
+    bytes: text.bytesize
+  }
 end
 
 main
