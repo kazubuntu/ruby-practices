@@ -7,11 +7,11 @@ def main
   options = parse_options
 
   if ARGV.empty?
-    text_of_stdin = read_text_from_stdin
+    text_of_stdin = $stdin.read
     stat_of_text_of_stdin = count_lines_words_bytes_in_text_of_stdin(text_of_stdin)
     print_stat_of_text_of_stdin(stat_of_text_of_stdin, options)
   else
-    texts_of_files = read_texts_from_files
+    texts_of_files = ARGV.map { |file| File.read(file) }
     stats_of_texts_of_files = count_lines_words_bytes_in_texts_of_files(texts_of_files)
     print_stats_of_texts_of_files(stats_of_texts_of_files, options)
   end
@@ -26,14 +26,6 @@ def parse_options
     opt.parse!(ARGV)
   end
   options
-end
-
-def read_text_from_stdin
-  $stdin.read
-end
-
-def read_texts_from_files
-  ARGV.map { |file| File.read(file) }
 end
 
 def count_lines_words_bytes_in_text_of_stdin(text)
