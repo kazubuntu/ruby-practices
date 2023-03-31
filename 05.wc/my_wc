@@ -11,7 +11,7 @@ def main
     stat_of_text_of_stdin = count_lines_words_bytes(text_of_stdin)
     print_stat_of_text_of_stdin(stat_of_text_of_stdin, options)
   else
-    texts_of_files = ARGV.map { |file| File.read(file) }
+    texts_of_files = ARGV.map { |file| { filename: file, text: File.read(file) } }
     stats_of_texts_of_files = count_stats_in_texts_of_files(texts_of_files)
     print_stats_of_texts_of_files(stats_of_texts_of_files, options)
   end
@@ -28,18 +28,20 @@ def parse_options
   options
 end
 
-def count_stats_in_texts_of_files(texts)
-  texts.map do |text|
-    count_lines_words_bytes(text)
-  end
-end
-
 def count_lines_words_bytes(text)
   {
     lines: text.lines.size,
     words: text.split.size,
     bytes: text.bytesize
   }
+end
+
+def count_stats_in_texts_of_files(texts_of_files)
+  texts_of_files.map do |text_of_file|
+    stat = count_lines_words_bytes(text_of_file[:text])
+    stat[:filename] = text_of_file[:filename]
+    stat
+  end
 end
 
 def print_stat_of_text_of_stdin(stat, options)
@@ -50,7 +52,7 @@ end
 def format_stat(stat, options)
   filtered_stat = filter_stat(stat, options)
   if options.size == 1
-    filtered_stat.join(' ')
+    filtered_stat
   else
     filtered_stat.map { |item| item.to_s.rjust(7) }.join(' ')
   end
@@ -62,7 +64,7 @@ end
 
 def print_stats_of_texts_of_files(stats, options)
   formated_stats = format_stats(stats, options)
-  if ARGV.size == 1
+  if stats.size == 1
     puts formated_stats[0]
   else
     formated_stats.each { |formated_stat| puts formated_stat }
@@ -72,13 +74,12 @@ end
 def format_stats(stats, options)
   total_stat = count_total_stat(stats)
   max_width = calc_max_width(total_stat)
-  filtered_stats = filter_stats(stats, total_stat, options)
-  filtered_stats_added_filename = add_filename(filtered_stats)
-  filtered_stats_added_filename.map do |filtered_stat|
-    if options.size == 1 && ARGV.size == 1
-      filtered_stat.join(' ')
+  filtered_stats = filter_stats(stats + [total_stat], options)
+  filtered_stats.map do |filtered_stat|
+    if options.size == 1 && stats.size == 1
+      filtered_stat.values.join(' ')
     else
-      filtered_stat.map { |item| item.is_a?(Integer) ? item.to_s.rjust(max_width) : item }.join(' ')
+      filtered_stat.map { |key, value| key == :filename ? value : value.to_s.rjust(max_width) }.join(' ')
     end
   end
 end
@@ -92,22 +93,17 @@ def count_total_stat(stats)
     words += stat[:words]
     bytes += stat[:bytes]
   end
-  { lines:, words:, bytes: }
+  { lines:, words:, bytes:, filename: '合計' }
 end
 
 def calc_max_width(total_stat)
-  total_stat.values.inject(0) { |result, value| [result, value].max }.to_s.length
+  total_stat.values_at(:lines, :words, :bytes).inject(0) { |result, value| [result, value].max }.to_s.length
 end
 
-def filter_stats(stats, total_stat, options)
-  stats.push(total_stat).map do |stat|
-    stat.filter_map { |key, value| value if options[key] || options.empty? }
+def filter_stats(stats, options)
+  stats.map do |stat|
+    stat.filter { |key, _| options[key] || options.empty? || key == :filename }
   end
-end
-
-def add_filename(filtered_stats)
-  filenames = ARGV + ['合計']
-  filtered_stats.zip(filenames).map(&:flatten)
 end
 
 main
