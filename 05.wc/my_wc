@@ -7,12 +7,10 @@ def main
   options = parse_options
 
   if ARGV.empty?
-    text_of_stdin = $stdin.read
-    stat_of_text_of_stdin = count_lines_words_bytes(text_of_stdin)
+    stat_of_text_of_stdin = count_lines_words_bytes($stdin.read)
     print_stat_of_text_of_stdin(stat_of_text_of_stdin, options)
   else
-    texts_of_files = ARGV.map { |file| { filename: file, text: File.read(file) } }
-    stats_of_texts_of_files = count_stats_in_texts_of_files(texts_of_files)
+    stats_of_texts_of_files = ARGV.map { |file| count_lines_words_bytes(File.read(file), file) }
     print_stats_of_texts_of_files(stats_of_texts_of_files, options)
   end
 end
@@ -28,20 +26,13 @@ def parse_options
   options
 end
 
-def count_lines_words_bytes(text)
+def count_lines_words_bytes(text, file = nil)
   {
     lines: text.lines.size,
     words: text.split.size,
-    bytes: text.bytesize
+    bytes: text.bytesize,
+    filename: file
   }
-end
-
-def count_stats_in_texts_of_files(texts_of_files)
-  texts_of_files.map do |text_of_file|
-    stat = count_lines_words_bytes(text_of_file[:text])
-    stat[:filename] = text_of_file[:filename]
-    stat
-  end
 end
 
 def print_stat_of_text_of_stdin(stat, options)
