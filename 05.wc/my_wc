@@ -47,7 +47,7 @@ def print_stats(stats, options)
     elsif stat[:filename]
       puts format_stat(stat, max_width)
     else
-      puts(stat.map { |_, value| value.to_s.rjust(7) }.join(' '))
+      puts format_stat(stat, 7)
     end
   end
   puts format_stat(filtered_total_stat[0], max_width) if stats.size > 1
