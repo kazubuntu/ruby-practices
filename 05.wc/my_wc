@@ -3,6 +3,8 @@
 
 require 'optparse'
 
+MAX_WIDTH_OF_STDIN = 7
+
 def main
   options = parse_options
 
@@ -47,7 +49,7 @@ def print_stats(stats, options)
     elsif stat[:filename]
       puts format_stat(stat, max_width)
     else
-      puts format_stat(stat, 7)
+      puts format_stat(stat, MAX_WIDTH_OF_STDIN)
     end
   end
   puts format_stat(filtered_total_stat[0], max_width) if stats.size > 1
