@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+
+MAX_WIDTH_OF_STDIN = 7
+
+def main
+  options = parse_options
+
+  if ARGV.empty?
+    stat_of_text_of_stdin = count_lines_words_bytes($stdin.read)
+    print_stats([stat_of_text_of_stdin], options)
+  else
+    stats_of_texts_of_files = ARGV.map { |file| count_lines_words_bytes(File.read(file), file) }
+    print_stats(stats_of_texts_of_files, options)
+  end
+end
+
+def parse_options
+  options = {}
+  OptionParser.new do |opt|
+    opt.on('-l') { |v| options[:lines] = v }
+    opt.on('-w') { |v| options[:words] = v }
+    opt.on('-c') { |v| options[:bytes] = v }
+    opt.parse!(ARGV)
+  end
+  options
+end
+
+def count_lines_words_bytes(text, file = nil)
+  {
+    lines: text.lines.size,
+    words: text.split.size,
+    bytes: text.bytesize,
+    filename: file
+  }
+end
+
+def print_stats(stats, options)
+  total_stat = count_total_stat(stats)
+  max_width = stats[0][:filename] ? calc_max_width(total_stat) : MAX_WIDTH_OF_STDIN
+  filtered_stats = filter_stats(stats, options)
+  filtered_total_stat = filter_stats([total_stat], options)
+
+  filtered_stats.each do |stat|
+    if options.size == 1 && stats.size == 1
+      puts stat.values.join(' ')
+    else
+      puts format_stat(stat, max_width)
+    end
+  end
+  puts format_stat(filtered_total_stat[0], max_width) if stats.size > 1
+end
+
+def count_total_stat(stats)
+  lines = 0
+  words = 0
+  bytes = 0
+  stats.each do |stat|
+    lines += stat[:lines]
+    words += stat[:words]
+    bytes += stat[:bytes]
+  end
+  { lines:, words:, bytes:, filename: '合計' }
+end
+
+def calc_max_width(total_stat)
+  total_stat.values_at(:lines, :words, :bytes).inject(0) { |result, value| [result, value].max }.to_s.length
+end
+
+def filter_stats(stats, options)
+  stats.map do |stat|
+    stat.filter { |key, _| options[key] || options.empty? || key == :filename }
+  end
+end
+
+def format_stat(stat, max_width)
+  stat.map { |key, value| key == :filename ? value : value.to_s.rjust(max_width) }.join(' ')
+end
+
+main
