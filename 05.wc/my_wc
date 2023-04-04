@@ -39,17 +39,15 @@ end
 
 def print_stats(stats, options)
   total_stat = count_total_stat(stats)
-  max_width = calc_max_width(total_stat)
+  max_width = stats[0][:filename] ? calc_max_width(total_stat) : MAX_WIDTH_OF_STDIN
   filtered_stats = filter_stats(stats, options)
   filtered_total_stat = filter_stats([total_stat], options)
 
   filtered_stats.each do |stat|
     if options.size == 1 && stats.size == 1
       puts stat.values.join(' ')
-    elsif stat[:filename]
-      puts format_stat(stat, max_width)
     else
-      puts format_stat(stat, MAX_WIDTH_OF_STDIN)
+      puts format_stat(stat, max_width)
     end
   end
   puts format_stat(filtered_total_stat[0], max_width) if stats.size > 1
