@@ -3,8 +3,14 @@
 require_relative 'frame'
 
 class Game
-  def initialize(marks_each_frames)
-    @frames = marks_each_frames.map { |marks_each_frame| Frame.new(*marks_each_frame) }
+  def initialize(marks_of_game)
+    @frames = build_frames(marks_of_game)
+  end
+
+  def build_frames(marks_of_game)
+    marks_each_frames = marks_of_game.split(',').chunk_while { |after, before| after != 'X' && before != 'X' }.flat_map { |marks| marks.each_slice(2).to_a }
+    marks_each_frames[9] += marks_each_frames.pop((marks_each_frames.size - 10)).flatten
+    marks_each_frames.map { |marks_each_frame| Frame.new(*marks_each_frame) }
   end
 
   def score
