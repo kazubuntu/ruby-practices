@@ -14,11 +14,11 @@ class Game
   def bonus
     bonus_score = 0
     9.times do |index|
-      bonus_score += @frames[index + 1].first_shot.score if @frames[index].spear?
+      bonus_score += @frames[index + 1].first_shot.score if @frames[index].spare?
       next unless @frames[index].strike?
 
       bonus_score += @frames[index + 1].first_shot.score
-      bonus_score += if @frames[index + 1].strike?
+      bonus_score += if @frames[index + 1].strike? && index < 8
                        @frames[index + 2].first_shot.score
                      else
                        @frames[index + 1].second_shot.score

@@ -15,11 +15,11 @@ class Frame
     [first_shot.score, second_shot.score, @third_shot.score].sum
   end
 
-  def spear?
+  def spare?
     score == 10 && !strike?
   end
 
   def strike?
-    first_shot.mark == 'X' && second_shot.mark.nil?
+    first_shot.score == 10 && second_shot.score.zero?
   end
 end
