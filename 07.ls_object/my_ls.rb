@@ -27,10 +27,10 @@ class MyLs
 
   COLMUN_SIZE = 3.0
   def transpose_directory_entries
-    slice_size = (@directory_entries.size / COLMUN_SIZE).ceil
-    @directory_entries.each_slice(slice_size).map do |entries|
+    row_size = (@directory_entries.size / COLMUN_SIZE).ceil
+    @directory_entries.each_slice(row_size).map do |entries|
       max_width = entries.inject(0) { |result, entry| [result, entry.name.size].max }
-      entries.map { |entry| entry.name.ljust(max_width + 2) } + Array.new(slice_size - entries.size)
+      entries.map { |entry| entry.name.ljust(max_width + 2) } + Array.new(row_size - entries.size)
     end.transpose
   end
 
