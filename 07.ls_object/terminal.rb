@@ -4,13 +4,13 @@ require 'optparse'
 require_relative 'list_formatter'
 
 class Terminal
-  def initialize
-    @options = ARGV.getopts('arl')
-    @formatter = ListFormatter.new(@options)
+  def initialize(directory, options)
+    @directory = directory
+    @formatter = ListFormatter.new(@directory, options)
   end
 
-  def print_directory_entries(directory)
-    lists = @formatter.format(directory)
+  def print_directory_entries
+    lists = @formatter.format
     lists.each { |list| puts list }
   end
 end

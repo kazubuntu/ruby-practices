@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 class ListFormatter
-  def initialize(options)
+  def initialize(directory, options)
+    @directory = directory
     @options = options
   end
 
   COLUMN_SIZE = 3.0
-  def format(directory)
-    directory.reject_hidden_files unless @options['a']
-    directory.reverse_directory_entries if @options['r']
-    return long_list(directory.directory_entries) if @options['l']
+  def format
+    @directory.reject_hidden_files unless @options['a']
+    @directory.reverse_directory_entries if @options['r']
+    return long_list(@directory.directory_entries) if @options['l']
 
-    short_list(directory.directory_entries, COLUMN_SIZE)
+    short_list(@directory.directory_entries, COLUMN_SIZE)
   end
 
   private
