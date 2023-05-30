@@ -1,6 +1,21 @@
 # frozen_string_literal: true
 
 class ListFormatter
+  def initialize(options)
+    @options = options
+  end
+
+  COLUMN_SIZE = 3.0
+  def format(directory)
+    directory.reject_hidden_files unless @options['a']
+    directory.reverse_directory_entries if @options['r']
+    return long_list(directory.directory_entries) if @options['l']
+
+    short_list(directory.directory_entries, COLUMN_SIZE)
+  end
+
+  private
+
   def short_list(directory_entries, column_size)
     row_size = (directory_entries.size / column_size).ceil
     directory_entries.each_slice(row_size).map do |entries|
@@ -10,6 +25,7 @@ class ListFormatter
   end
 
   def long_list(directory_entries)
+    total_blocks = directory_entries.sum(&:blocks)
     max_width_of_nlink = directory_entries.inject(0) { |result, entry| [result, entry.nlink.to_s.length].max }
     max_width_of_size = directory_entries.inject(0) { |result, entry| [result, entry.size.to_s.length].max }
     directory_entries.map do |directory_entry|
@@ -22,6 +38,6 @@ class ListFormatter
         directory_entry.mtime,
         directory_entry.name
       ].join(' ')
-    end
+    end.unshift(["合計 #{total_blocks}"])
   end
 end
